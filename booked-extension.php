@@ -29,6 +29,8 @@ class Booked_Extension {
 		add_action( 'booked_fe_calendar_date_after', array( $this, 'add_script_to_list' ) );
 		add_filter( 'booked_appointments_array', array( $this, 'set_appt_ids' ) );
 		add_filter( 'booked_fe_calendar_timeslot_after', array( $this, 'add_hidden_meta' ), 10, 2 );
+		add_filter( 'booked_csv_export_columns', array( $this, 'change_custom_field_data' ) );
+		add_filter( 'booked_csv_row_data', array( $this, 'set_custom_field_data_csv' ), 10, 2 );
 	}
 
 	/**
@@ -218,6 +220,72 @@ class Booked_Extension {
 		$html .= ob_get_clean();
 
 		return $html;
+	}
+
+	/**
+	 * Unsets the Custom Field Data column and adds the custom metas as seperate columns.
+	 *
+	 * @param array $columns The columns.
+	 * @return array
+	 */
+	public function change_custom_field_data( $columns ) {
+		// Unset the custom fields data column.
+		foreach ( $columns as $key => $title ) {
+			if ( 'Custom Field Data' === $title ) {
+				unset( $columns[ $key ] );
+			}
+		}
+		// Get all custom fields from the settings.
+		$custom_fields = json_decode( stripslashes( get_option( 'booked_custom_fields' ) ), true );
+
+		// Loop each custom field and set the column based on the name.
+		foreach ( $custom_fields as $custom_field ) {
+			if ( ! is_bool( $custom_field['value'] ) ) {
+				$columns[] = $custom_field['value'];
+			}
+		}
+
+		return $columns;
+	}
+
+	/**
+	 * Sets the custom field data for the appointments.
+	 *
+	 * @param array $appointment The Appointment data.
+	 * @param int   $appt_id The post id for the appointment.
+	 * @return array
+	 */
+	public function set_custom_field_data_csv( $appointment, $appt_id ) {
+		$meta_data = $appointment['custom_field_data'];
+		// Explode the meta data on new lines.
+		$exploded = explode( "\n", $meta_data );
+		// Unset every empty value.
+		foreach ( $exploded as $key => $value ) {
+			if ( '' === $value ) {
+				unset( $exploded[ $key ] );
+			}
+		}
+		// Reset keys.
+		$exploded = array_values( $exploded );
+
+		$length = count( $exploded );
+
+		// Remove even keys, we only want the values and the even keys is the meta names.
+		for ( $i = 0; $i < $length; $i++ ) {
+			if ( ( $i % 2 ) === 0 ) {
+				unset( $exploded[ $i ] );
+			}
+		}
+
+		// Unset the current custom field data.
+		unset( $appointment['custom_field_data'] );
+
+		// Set the values to the appointment array.
+		foreach ( $exploded as $value ) {
+			$appointment[] = $value;
+		}
+
+		return $appointment;
 	}
 }
 new Booked_Extension();
