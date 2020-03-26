@@ -26,6 +26,9 @@ class Booked_Extension {
 		add_action( 'booked_admin_calendar_buttons_after', array( $this, 'add_to_calendar_admin' ), 10, 3 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 		add_action( 'wp_ajax_booked_save_discrepency', array( $this, 'ajax_save_note' ) );
+		add_action( 'booked_fe_calendar_date_after', array( $this, 'add_script_to_list' ) );
+		add_filter( 'booked_appointments_array', array( $this, 'set_appt_ids' ) );
+		add_filter( 'booked_fe_calendar_timeslot_after', array( $this, 'add_hidden_meta' ), 10, 2 );
 	}
 
 	/**
@@ -144,6 +147,77 @@ class Booked_Extension {
 		}
 		wp_send_json_success();
 		wp_die();
+	}
+
+	/**
+	 * Adds the script to the frontend page.
+	 *
+	 * @return void
+	 */
+	public function add_script_to_list() {
+		?>
+			<script>
+				jQuery(function($) {
+					function moveFields() {
+						var lists = $('.booked-public-appointment-list');
+						lists.each( function( i ) {
+							var meta = $(lists[i]).parent().find('.booked-ext-meta-data');
+							var li = $(lists[i]).parent().find('li');
+							meta.each( function( x ) {
+								$( li[x] ).append( $( meta[x] ).val() );
+							});
+						});
+					}
+					moveFields();
+				});
+			</script>
+		<?php
+	}
+
+	/**
+	 * Sets the appt ids for other functions.
+	 *
+	 * @param array $appt_ids The appt ids.
+	 * @return array
+	 */
+	public function set_appt_ids( $appt_ids ) {
+		$this->appt_ids = $appt_ids;
+		return $appt_ids;
+	}
+
+	/**
+	 * Undocumented function
+	 *
+	 * @param string $html HTML code.
+	 * @param string $this_timeslot_timestamp The timestamp for the timeslot.
+	 * @return string
+	 */
+	public function add_hidden_meta( $html, $this_timeslot_timestamp ) {
+		$appt_ids = $this->appt_ids;
+		if ( empty( $appt_ids ) ) {
+			return $html;
+		}
+
+		ob_start();
+		?>
+		<?php
+		foreach ( $appt_ids as $appt_id => $values ) {
+			if ( $this_timeslot_timestamp == $values['timestamp'] ) { // phpcs:ignore
+				$metatext = '';
+				$postmeta = get_post_meta( $appt_id );
+				foreach ( $postmeta['_cf_meta_value'] as $meta ) {
+					if ( '' !== $meta ) {
+						$metatext .= $meta;
+					}
+				}
+				?>
+					<input type="hidden" class="booked-ext-meta-data" value="<?php echo esc_attr( $metatext ); ?>">
+				<?php
+			}
+		}
+		$html .= ob_get_clean();
+
+		return $html;
 	}
 }
 new Booked_Extension();
