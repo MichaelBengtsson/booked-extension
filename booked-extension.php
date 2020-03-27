@@ -229,6 +229,10 @@ class Booked_Extension {
 	 * @return array
 	 */
 	public function change_custom_field_data( $columns ) {
+		// Set columns for custom data from input fields.
+		$columns[] = __( 'Discrepency', 'booked-extension' );
+		$columns[] = __( 'Note', 'booked-extension' );
+
 		// Unset the custom fields data column.
 		foreach ( $columns as $key => $title ) {
 			if ( 'Custom Field Data' === $title ) {
@@ -256,6 +260,15 @@ class Booked_Extension {
 	 * @return array
 	 */
 	public function set_custom_field_data_csv( $appointment, $appt_id ) {
+		// Get the custom values from input fields.
+		$type   = get_post_meta( $appt_id, '_booked-discrepancy', true ) ? get_post_meta( $appt_id, '_booked-discrepancy', true ) : 'none';
+		$reason = get_post_meta( $appt_id, '_booked-discrepancy-text', true ) ? get_post_meta( $appt_id, '_booked-discrepancy-text', true ) : ' ';
+
+		// Set custom values from input fields.
+		$appointment['discrepency'] = $type;
+		$appointment['note']        = $reason;
+
+		// Process meta data.
 		$meta_data = $appointment['custom_field_data'];
 		// Explode the meta data on new lines.
 		$exploded = explode( "\n", $meta_data );
