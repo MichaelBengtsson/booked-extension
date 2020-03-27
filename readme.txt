@@ -12,5 +12,10 @@ License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
 == Changelog ==
 
+= 1.1.0 =
+* Enhancement	- Added support for CSV export for our input fields.
+* Enhancement	- Changed how the extra input fields added through settings are displayed in the CSV export.
+* Enhancement	- Added display of extra input fields to the calendar view for the customers.
+
 = 1.0.0 =
 * Initial release.

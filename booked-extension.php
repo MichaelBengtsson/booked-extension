@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Booked Extension
  * Description: An extension to the Booked plugin.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Michael Bengtsson
  * Author URI: https://github.com/MichaelBengtsson/
  * Text Domain: booked-extension
